@@ -37,7 +37,6 @@ fn main() {
 
     let input = Input::from_stream(&mut stream, filesize, &opts.input, |_|(), Arc::new(AtomicBool::new(false))).unwrap();
 
-    let mut i = 0;
     println!("Detected camera: {} {}", input.camera_type(), input.camera_model().unwrap_or(&"".into()));
 
     let samples = input.samples.as_ref().unwrap();
@@ -58,31 +57,31 @@ fn main() {
     let imu_data = util::normalized_imu(&input, opts.imuo).unwrap();
 
     let mut csv = String::with_capacity(2*1024*1024);
-    csv.push_str(r#""Product","Blackbox flight data recorder by Nicholas Sherlock""#);
+    csv.push_str(r#"Clock:Tick, Dji data decorder by wuyi.zhang"#);
     csv.push('\n');
-    crate::try_block!({
-        let map = samples.get(0)?.tag_map.as_ref()?;
-        let json = (map.get(&GroupId::Default)?.get_t(TagId::Metadata) as Option<&serde_json::Value>)?;
-        for (k, v) in json.as_object()? {
-            csv.push('"');
-            csv.push_str(&k.to_string());
-            csv.push_str("\",");
-            csv.push_str(&v.to_string());
-            csv.push('\n');
-        }
-    });
 
-    csv.push_str(r#""loopIteration","time","gyroADC[0]","gyroADC[1]","gyroADC[2]","accSmooth[0]","accSmooth[1]","accSmooth[2]""#);
+    // crate::try_block!({
+    //     let map = samples.get(0)?.tag_map.as_ref()?;
+    //     let json = (map.get(&GroupId::Default)?.get_t(TagId::Metadata) as Option<&serde_json::Value>)?;
+    //     for (k, v) in json.as_object()? {
+    //         csv.push('"');
+    //         csv.push_str(&k.to_string());
+    //         csv.push_str("\",");
+    //         csv.push_str(&v.to_string());
+    //         csv.push('\n');
+    //     }
+    // });
+
+    // imu dir : yxZ
+    csv.push_str(r#"Clock:offsetTime,IMU_ATTI(0):gyroX,IMU_ATTI(0):gyroY,IMU_ATTI(0):gyroZ,IMU_ATTI(0):accelX,IMU_ATTI(0):accelY,IMU_ATTI(0):accelZ"#);
     csv.push('\n');
     for v in imu_data {
         if v.gyro.is_some() || v.accl.is_some() {
             let gyro = v.gyro.unwrap_or_default();
-            let accl = v.accl.unwrap_or_default();
-            csv.push_str(&format!("{},{:.0},{},{},{},{},{},{}\n", i, (v.timestamp_ms).round(),
-                gyro[0], gyro[1], gyro[2],
-                accl[0], accl[1], accl[2]
+            let accl = v.accl.unwrap_or_default();  
+            // 前x 右y 下z
+            csv.push_str(&format!("{},{},{},{},{},{},{}\n", (v.timestamp_ms / 1000000.0), gyro[0], gyro[1], gyro[2], accl[0] * 0.102, accl[1] * 0.102, accl[2] * 0.102
             ));
-            i += 1;
         }
     }
     std::fs::write(&format!("{}.csv", std::path::Path::new(&opts.input).to_path_buf().to_string_lossy()), csv).unwrap();

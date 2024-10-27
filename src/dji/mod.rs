@@ -110,7 +110,9 @@ impl Dji {
                             *v /= fps / sensor_fps;
                         }
                     }
-
+                    util::insert_tag(&mut tag_map, tag!(parsed GroupId::Accelerometer, TagId::Unit, "Accelerometer unit", String, |v| v.to_string(), "g".into(), Vec::new()));
+                    util::insert_tag(&mut tag_map, tag!(parsed GroupId::Gyroscope,     TagId::Unit, "Gyroscope unit",     String, |v| v.to_string(), "rad/s".into(), Vec::new()));
+                
                     let fps_ratio = fps / sensor_fps;
 
                     let mut quats = Vec::new();
@@ -211,6 +213,17 @@ impl Dji {
 
                                 if info.sample_index == 0 { log::debug!("Quaternions: {:?}", &quats); }
                                 util::insert_tag(&mut tag_map, tag!(parsed GroupId::Quaternion, TagId::Data, "Quaternion data",  Vec_TimeQuaternion_f64, |v| format!("{:?}", v), quats, vec![]));
+                                
+                                let mut gyro = Vec::new();
+                                let mut accl = Vec::new();
+                                for (i, imu_raw_data) in attitude.imu_raw.iter().enumerate() {
+                                    let index = i as f64 - attitude.offset as f64;
+                                    let ts = frame_timestamp + ((index / len) * vsync_duration);
+                                    gyro.push(TimeVector3 {t: ts, x: imu_raw_data.gyroscope_x as f64, y: imu_raw_data.gyroscope_y as f64, z: imu_raw_data.gyroscope_z as f64});
+                                    accl.push(TimeVector3 {t: ts, x: imu_raw_data.accelerometer_x as f64, y: imu_raw_data.accelerometer_y as f64, z: imu_raw_data.accelerometer_z as f64});
+                                }
+                                util::insert_tag(&mut tag_map, tag!(parsed GroupId::Gyroscope,   TagId::Data, "Gyroscope data",     Vec_TimeVector3_f64, |v| format!("{:?}", v), gyro, vec![]));
+                                util::insert_tag(&mut tag_map, tag!(parsed GroupId::Accelerometer, TagId::Data, "Accelerometer data", Vec_TimeVector3_f64, |v| format!("{:?}", v), accl, vec![]));
                             }
                         }
                     }

@@ -1128,6 +1128,32 @@ pub struct Quaternion {
     pub quaternion_z: f32,
 }
 ///*
+/// The raw imu data
+#[derive(::serde::Serialize, Clone, PartialEq, ::prost::Message)]
+pub struct DjiIMURaw {
+    ///* The gyroscope in X direction, unit: rad/s.
+    #[prost(float, tag="1")]
+    pub gyroscope_x: f32,
+    ///* The gyroscope in Y direction, unit: rad/s.
+    #[prost(float, tag="2")]
+    pub gyroscope_y: f32,
+    ///* The gyroscope in Z direction, unit: rad/s.
+    #[prost(float, tag="3")]
+    pub gyroscope_z: f32,
+    ///* The accelerometer in X direction, unit: g.
+    #[prost(float, tag="4")]
+    pub accelerometer_x: f32,
+    ///* The accelerometer in Y direction, unit: g.
+    #[prost(float, tag="5")]
+    pub accelerometer_y: f32,
+    ///* The accelerometer in Z direction, unit: g.
+    #[prost(float, tag="6")]
+    pub accelerometer_z: f32,
+    ///* The temperature of imu, unit: celsius degree.
+    #[prost(int32, tag="7")]
+    pub temperature: i32,
+}
+///*
 /// The velocity of the device on the XYZ.
 #[derive(::serde::Serialize, Clone, PartialEq, ::prost::Message)]
 pub struct Velocity {
@@ -1538,6 +1564,9 @@ pub struct DeviceAttitude {
     /// time offset between first row of sensor exposure and first sample of device
     #[prost(float, tag="4")]
     pub offset: f32,
+    /// array containing all imu raw data belong to certain vsync cnt, like 200/fps
+    #[prost(message, repeated, tag="5")]
+    pub imu_raw: ::prost::alloc::vec::Vec<DjiIMURaw>,
 }
 #[derive(::serde::Serialize, Clone, PartialEq, ::prost::Message)]
 pub struct SensorFrameReadOutTime {
